@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { DEFAULT_SPEC, SpecData, PersonItem, VersionEntry } from './types';
 import MarkdownEditor from './components/MarkdownEditor';
 import DocumentLayout from './components/DocumentLayout';
-import { exportToWord } from './lib/exportUtils';
+import { exportToWord, exportToPDF } from './lib/exportUtils';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -59,6 +59,10 @@ export default function App() {
 
   const handleExportWord = async () => {
     await exportToWord(data);
+  };
+
+  const handleExportPDF = async () => {
+    await exportToPDF('document-preview', data.projectTitle || 'Specification');
   };
 
   const addListItem = (field: keyof SpecData) => {
@@ -489,6 +493,8 @@ export default function App() {
                               </table>
                             </div>
                           </section>
+                        </div>
+                      )}
 
                       {activeSection === 'db_master' && (
                         <div className="space-y-12">
@@ -562,8 +568,6 @@ export default function App() {
 
                       {activeSection === 'addendum' && (
                         <MarkdownEditor value={data.addendum} onChange={(v) => updateField('addendum', v)} label="Addendum (Additional Information)" />
-                      )}
-                        </div>
                       )}
 
                       {activeSection === 'test' && (
@@ -695,9 +699,12 @@ export default function App() {
                       exit={{ opacity: 0, scale: 0.98 }}
                       className="pb-20 pt-4 flex flex-col items-center gap-8 w-full"
                     >
-                     <div className="flex gap-4 no-print">
+                      <div className="flex gap-4 no-print">
                         <button onClick={handlePrint} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold shadow-sm hover:border-blue-500 hover:text-blue-600 transition-all">
                           <Printer size={18} /> Print as PDF
+                        </button>
+                        <button onClick={handleExportPDF} className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-sm hover:bg-blue-700 transition-all">
+                          <Download size={18} /> Download PDF
                         </button>
                         <button onClick={handleExportWord} className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-xl font-bold shadow-sm hover:border-blue-500 hover:text-blue-600 transition-all">
                           <FileDown size={18} /> Download Word
@@ -712,9 +719,36 @@ export default function App() {
               </div>
  </>
           ) : (
-            <div className="flex-1 overflow-y-auto bg-slate-50/50 p-12 flex justify-center">
-               <DocumentLayout data={data} />
-            </div>
+            <motion.div
+              key="preview-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex-1 flex flex-col min-h-0 bg-slate-50/50"
+            >
+              <div className="h-16 border-b border-slate-200 bg-white flex items-center justify-center gap-4 shrink-0 no-print">
+                <button 
+                  onClick={handlePrint} 
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-all text-sm"
+                >
+                  <Printer size={16} /> System Print
+                </button>
+                <button 
+                  onClick={handleExportPDF} 
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition-all text-sm shadow-md"
+                >
+                  <Download size={16} /> Download PDF
+                </button>
+                <button 
+                  onClick={handleExportWord} 
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all text-sm shadow-md"
+                >
+                  <FileDown size={16} /> Download Word
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-12 flex justify-center">
+                <DocumentLayout data={data} />
+              </div>
+            </motion.div>
           )}
         </main>
       </div>

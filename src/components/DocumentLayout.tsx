@@ -13,7 +13,7 @@ interface DocumentLayoutProps {
 
 export default function DocumentLayout({ data }: DocumentLayoutProps) {
   return (
-    <div className="bg-white shadow-2xl mx-auto w-full max-w-[850px] min-h-[1100px] p-[2cm] print:p-0 print:shadow-none print:max-w-none">
+    <div id="document-preview" className="bg-white shadow-2xl mx-auto w-full max-w-[850px] min-h-[1100px] p-[2cm] print:p-0 print:shadow-none print:max-w-none">
       {/* Cover Page */}
       <div className="min-h-[1000px] flex flex-col justify-between border-t-[30px] border-corporate-blue pb-10">
         <div className="pt-20">
