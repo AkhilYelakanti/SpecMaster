@@ -37,6 +37,7 @@ interface DashboardProps {
   customTemplates: CustomTemplate[];
   onDeleteTemplate: (id: string) => void;
   onContinueDraft: (data: SpecData) => void;
+  onManageTemplates: () => void;
 }
 
 export default function Dashboard({ 
@@ -45,7 +46,8 @@ export default function Dashboard({
   recentDrafts, 
   customTemplates, 
   onDeleteTemplate,
-  onContinueDraft
+  onContinueDraft,
+  onManageTemplates
 }: DashboardProps) {
   const [showSettings, setShowSettings] = React.useState(false);
   const [apiKey, setApiKey] = React.useState(localStorage.getItem('gemini_api_key') || '');
@@ -490,6 +492,13 @@ export default function Dashboard({
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Reusable</h3>
                 <p className="text-2xl font-black tracking-tight">Your Blueprints</p>
               </div>
+              <button 
+                onClick={onManageTemplates}
+                className="p-2 text-brand-cyan hover:text-brand-teal transition-colors"
+                title="Manage All Templates"
+              >
+                <MoreVertical size={20} />
+              </button>
             </div>
 
             <div className="space-y-4">

@@ -80,6 +80,9 @@ export interface CustomTemplate {
   name: string;
   description: string;
   data: SpecData;
+  createdAt?: string;
+  updatedAt?: string;
+  version?: string;
 }
 
 export interface CustomSection {

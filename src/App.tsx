@@ -37,8 +37,16 @@ import { DEFAULT_SPEC, SpecData, PersonItem, VersionEntry, CustomTemplate } from
 import MarkdownEditor from './components/MarkdownEditor';
 import DocumentLayout from './components/DocumentLayout';
 import Dashboard, { Logo } from './components/Dashboard';
+import TemplateManager from './components/TemplateManager';
 import { exportToWord, exportToPDF } from './lib/exportUtils';
 import { cn } from './lib/utils';
+import { 
+  ArrowUp, 
+  ArrowDown, 
+  Copy as CopyIcon,
+  Layout as LayoutIcon,
+  MoreVertical
+} from 'lucide-react';
 
 
 export default function App() {
@@ -64,7 +72,7 @@ export default function App() {
     const saved = localStorage.getItem('specmaster_recent_sessions');
     return saved ? JSON.parse(saved) : [];
   });
-  const [page, setPage] = useState<'dashboard' | 'editor'>('dashboard');
+  const [page, setPage] = useState<'dashboard' | 'editor' | 'templates'>('dashboard');
   const [view, setView] = useState<'edit' | 'preview'>('edit');
   const [activeSection, setActiveSection] = useState('cover');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -327,6 +335,21 @@ export default function App() {
     }));
   };
 
+  const updateTemplate = (id: string, updates: Partial<CustomTemplate>) => {
+    setCustomTemplates(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+
+  const duplicateTemplate = (template: CustomTemplate) => {
+    const newTemplate = {
+      ...template,
+      id: crypto.randomUUID(),
+      name: `${template.name} (Copy)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setCustomTemplates(prev => [...prev, newTemplate]);
+  };
+
   const sidebarItems = [
     { id: 'cover', label: 'Cover Page', icon: <FileText size={18} /> },
     { id: 'control', label: 'Control & Approvals', icon: <Users size={18} /> },
@@ -385,6 +408,45 @@ export default function App() {
     }));
   };
 
+  const moveCustomSection = (id: string, direction: 'up' | 'down') => {
+    setData(prev => {
+      const sections = [...(prev.customSections || [])].sort((a, b) => a.order - b.order);
+      const index = sections.findIndex(s => s.id === id);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'up' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= sections.length) return prev;
+      
+      const movedItem = sections[index];
+      sections.splice(index, 1);
+      sections.splice(newIndex, 0, movedItem);
+      
+      // Update order property
+      const reordered = sections.map((s, i) => ({ ...s, order: i }));
+      return { ...prev, customSections: reordered };
+    });
+  };
+
+  const duplicateCustomSection = (id: string) => {
+    setData(prev => {
+      const sections = prev.customSections || [];
+      const original = sections.find(s => s.id === id);
+      if (!original) return prev;
+
+      const newSection = {
+        ...original,
+        id: crypto.randomUUID(),
+        title: `${original.title} (Copy)`,
+        order: sections.length
+      };
+
+      return {
+        ...prev,
+        customSections: [...sections, newSection]
+      };
+    });
+  };
+
   return (
     <div className={cn(
       "bg-brand-bg font-sans text-brand-dark min-h-screen",
@@ -406,6 +468,7 @@ export default function App() {
           recentDrafts={recentDrafts}
           customTemplates={customTemplates}
           onDeleteTemplate={(id) => setCustomTemplates(prev => prev.filter(t => t.id !== id))}
+          onManageTemplates={() => setPage('templates')}
           onContinueDraft={(d) => { 
             // Ensure we merge defaults to handle legacy data
             const normalizedData = {
@@ -425,6 +488,18 @@ export default function App() {
             };
             setData(normalizedData); 
             setPage('editor'); 
+          }}
+        />
+      ) : page === 'templates' ? (
+        <TemplateManager 
+          templates={customTemplates}
+          onBack={() => setPage('dashboard')}
+          onUpdateTemplate={updateTemplate}
+          onDeleteTemplate={(id) => setCustomTemplates(prev => prev.filter(t => t.id !== id))}
+          onDuplicateTemplate={duplicateTemplate}
+          onSelect={(tpl) => {
+            setData({ ...tpl.data });
+            setPage('editor');
           }}
         />
       ) : (
@@ -685,18 +760,42 @@ export default function App() {
                       </span>
                       <span className="truncate max-w-[140px] text-left">{item.label}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {isCustom && (
-                        <Trash2 
-                          size={12} 
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all" 
-                          onClick={(e) => removeCustomSection(item.id.replace('custom-', ''), e)}
-                        />
-                      )}
-                      {complete && (
-                        <CheckCircle className="text-green-500 shrink-0" size={14} />
-                      )}
-                    </div>
+                      <div className="flex items-center gap-1 group-hover:opacity-100 opacity-0 transition-opacity">
+                        {isCustom && (
+                          <>
+                            <div className="flex flex-col">
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); moveCustomSection(item.id.replace('custom-', ''), 'up'); }}
+                                className="p-0.5 text-slate-400 hover:text-brand-cyan hover:bg-white rounded transition-all"
+                              >
+                                <ArrowUp size={10} />
+                              </button>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); moveCustomSection(item.id.replace('custom-', ''), 'down'); }}
+                                className="p-0.5 text-slate-400 hover:text-brand-cyan hover:bg-white rounded transition-all"
+                              >
+                                <ArrowDown size={10} />
+                              </button>
+                            </div>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); duplicateCustomSection(item.id.replace('custom-', '')); }}
+                              className="p-1.5 text-slate-400 hover:text-brand-teal transition-all"
+                              title="Duplicate Section"
+                            >
+                              <CopyIcon size={12} />
+                            </button>
+                            <button 
+                              onClick={(e) => removeCustomSection(item.id.replace('custom-', ''), e)}
+                              className="p-1.5 text-slate-400 hover:text-red-500 transition-all"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </>
+                        )}
+                        {complete && (
+                          <CheckCircle className="text-green-500 shrink-0" size={14} />
+                        )}
+                      </div>
                   </button>
                 );
               })}
