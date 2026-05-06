@@ -158,33 +158,50 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
           </div>
           
           <div className="space-y-3 pt-4">
-            {[
-              { id: 1, label: 'Introduction', page: 4 },
-              { id: 2, label: 'Business Need', page: 5 },
-              { id: 3, label: 'Current vs. Proposed state', page: 6 },
-              { id: 4, label: 'Scope (In/Out)', page: 7 },
-              { id: 5, label: 'Assumptions & Constraints', page: 8 },
-              { id: 6, label: 'Solution Overview', page: 9 },
-              { id: 7, label: 'Technical Specifications', page: 10 },
-              { id: 8, label: 'Test Strategy & Scenarios', page: 11 },
-              { id: 9, label: 'Operational Support', page: 12 },
-              { id: 10, label: 'Database Master Schema', page: 13 },
-              { id: 11, label: 'Security & Integrity', page: 14 },
-              { id: 12, label: 'Open Review Points', page: 15 },
-              { id: 13, label: 'Addendum', page: 16 },
-            ].map(item => (
-              <div key={item.id} className="flex items-end gap-2 group cursor-pointer">
-                <span className="font-bold text-slate-700 whitespace-nowrap">{item.id}. {item.label}</span>
-                <div className="flex-1 border-b border-dotted border-slate-200 mb-1"></div>
-                <span className="font-bold text-corporate-blue shrink-0 bg-blue-50 px-2 rounded-sm">{item.page}</span>
-              </div>
-            ))}
+            {(() => {
+              const standardItems = data.specType === 'blank' ? [] : [
+                { label: 'Introduction', page: 4 },
+                { label: 'Business Need', page: 5 },
+                { label: 'Current vs. Proposed state', page: 6 },
+                { label: 'Scope (In/Out)', page: 7 },
+                { label: 'Assumptions & Constraints', page: 8 },
+                { label: 'Solution Overview', page: 9 },
+                { label: 'Technical Specifications', page: 10 },
+                { label: 'Test Strategy & Scenarios', page: 11 },
+                { label: 'Operational Support', page: 12 },
+                { label: 'Database Master Schema', page: 13 },
+                { label: 'Security & Integrity', page: 14 },
+                { label: 'Open Review Points', page: 15 },
+              ];
+
+              const customItems = (data.customSections || []).sort((a, b) => a.order - b.order).map((s, idx) => ({
+                label: s.title,
+                page: (data.specType === 'blank' ? 4 : 16) + idx
+              }));
+
+              const allItems = [
+                ...standardItems,
+                ...customItems,
+                { label: 'Addendum', page: (data.specType === 'blank' ? 4 : 16) + customItems.length }
+              ];
+
+              return allItems.map((item, idx) => (
+                <div key={idx} className="flex items-end gap-2 group cursor-pointer">
+                  <span className="font-bold text-slate-700 whitespace-nowrap">{idx + 1}. {item.label}</span>
+                  <div className="flex-1 border-b border-dotted border-slate-200 mb-1"></div>
+                  <span className="font-bold text-corporate-blue shrink-0 bg-blue-50 px-2 rounded-sm">{item.page}</span>
+                </div>
+              ));
+            })()}
           </div>
         </div>
         <PageFooter pageNum={3} />
       </div>
 
-      {/* Section 1: Introduction */}
+      {/* Standard Sections (Skip if Blank) */}
+      {data.specType !== 'blank' && (
+        <>
+          {/* Section 1: Introduction */}
       <div className="w-full max-w-[850px] min-h-[1100px] flex flex-col p-[2cm] bg-white shadow-2xl print:shadow-none border-t border-slate-50">
         <div className="flex-1 markdown-body prose prose-slate max-w-none">
           <section id="section-1">
@@ -526,16 +543,47 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
                </table>
             </div>
           </section>
-
-          <section id="section-13">
-            <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">13. Addendum</h1>
-            <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
-              {data.addendum || '*No additional information cited.*'}
-            </ReactMarkdown>
-          </section>
         </div>
         <PageFooter pageNum={15} />
       </div>
+    </>
+  )}
+
+  {/* Section List for Custom Pages */}
+          {(data.customSections || []).sort((a, b) => a.order - b.order).map((section, idx) => {
+            const pageNum = (data.specType === 'blank' ? 4 : 16) + idx;
+            const sectionNum = (data.specType === 'blank' ? 1 : 13) + idx;
+            return (
+              <div key={section.id} className="w-full max-w-[850px] min-h-[1100px] flex flex-col p-[2cm] bg-white shadow-2xl print:shadow-none border-t border-slate-50">
+                <div className="flex-1 markdown-body prose prose-slate max-w-none">
+                  <section id={`custom-${section.id}`}>
+                    <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">
+                      {sectionNum}. {section.title}
+                    </h1>
+                    <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                      {section.content || '*No content provided for this section.*'}
+                    </ReactMarkdown>
+                  </section>
+                </div>
+                <PageFooter pageNum={pageNum} />
+              </div>
+            );
+          })}
+
+          {/* Final Page: Addendum */}
+          <div className="w-full max-w-[850px] min-h-[1100px] flex flex-col p-[2cm] bg-white shadow-2xl print:shadow-none border-t border-slate-50">
+            <div className="flex-1 markdown-body prose prose-slate max-w-none">
+              <section id="section-13">
+                <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">
+                  {(data.specType === 'blank' ? 1 : 13) + data.customSections.length}. Addendum
+                </h1>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.addendum || '*No additional information cited.*'}
+                </ReactMarkdown>
+              </section>
+            </div>
+            <PageFooter pageNum={(data.specType === 'blank' ? 4 : 16) + data.customSections.length} />
+          </div>
     </div>
   );
 }

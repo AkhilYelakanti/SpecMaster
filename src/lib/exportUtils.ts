@@ -85,52 +85,121 @@ export async function exportToWord(data: SpecData) {
       }),
       new PageBreak(),
 
-      // Table of Contents Heading (Actual TOC in Word is hard with this library but we list headings)
+      // Section TOC List
       new Paragraph({ text: "Table of Contents", heading: HeadingLevel.HEADING_1, spacing: { after: 400 } }),
-      new Paragraph({ text: "1. Introduction", spacing: { after: 100 } }),
-      new Paragraph({ text: "2. Business Need", spacing: { after: 100 } }),
-      new Paragraph({ text: "3. Scope", spacing: { after: 100 } }),
-      new Paragraph({ text: "4. Assumptions & Constraints", spacing: { after: 100 } }),
-      new Paragraph({ text: "5. Solution Overview", spacing: { after: 100 } }),
-      new Paragraph({ text: "6. Technical Specifications", spacing: { after: 100 } }),
-      new Paragraph({ text: "7. Test Strategy", spacing: { after: 100 } }),
-      new Paragraph({ text: "8. Database Master Schema", spacing: { after: 100 } }),
+      ...(data.specType !== 'blank' ? [
+        new Paragraph({ text: "1. Introduction", spacing: { after: 100 } }),
+        new Paragraph({ text: "2. Business Need", spacing: { after: 100 } }),
+        new Paragraph({ text: "3. Scope", spacing: { after: 100 } }),
+        new Paragraph({ text: "4. Assumptions & Constraints", spacing: { after: 100 } }),
+        new Paragraph({ text: "5. Solution Overview", spacing: { after: 100 } }),
+        new Paragraph({ text: "6. Technical Specifications", spacing: { after: 100 } }),
+        new Paragraph({ text: "7. Test Strategy", spacing: { after: 100 } }),
+        new Paragraph({ text: "8. Database Master Schema", spacing: { after: 100 } }),
+        new Paragraph({ text: "9. Operational Support", spacing: { after: 100 } }),
+        new Paragraph({ text: "10. Security & Compliance", spacing: { after: 100 } }),
+        new Paragraph({ text: "11. Open Review Points", spacing: { after: 100 } }),
+      ] : []),
+      ...(data.customSections || []).sort((a, b) => a.order - b.order).map((s, idx) => 
+        new Paragraph({ 
+          text: `${(data.specType === 'blank' ? 1 : 12) + idx}. ${s.title}`, 
+          spacing: { after: 100 } 
+        })
+      ),
+      new Paragraph({ 
+        text: `${(data.specType === 'blank' ? 1 : 12) + (data.customSections || []).length}. Addendum`, 
+        spacing: { after: 100 } 
+      }),
       new PageBreak(),
 
-      // Section 1
-      new Paragraph({ text: "1. Introduction", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-      new Paragraph({ text: data.introduction }),
-      new PageBreak(),
+      // Section Content
+      ...(data.specType !== 'blank' ? [
+        // Section 1
+        new Paragraph({ text: "1. Introduction", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: data.introduction || '' }),
+        new PageBreak(),
 
-      // Section 2
-      new Paragraph({ text: "2. Business Need", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-      new Paragraph({ text: data.businessNeed }),
-      new PageBreak(),
+        // Section 2
+        new Paragraph({ text: "2. Business Need", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: data.businessNeed || '' }),
+        new PageBreak(),
 
-      // Section 3
-      new Paragraph({ text: "3. Scope", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-      new Paragraph({ text: "3.1 In Scope", heading: HeadingLevel.HEADING_2 }),
-      new Paragraph({ text: data.scopeIn }),
-      new Paragraph({ text: "3.2 Out of Scope", heading: HeadingLevel.HEADING_2 }),
-      new Paragraph({ text: data.scopeOut }),
-      new PageBreak(),
+        // Section 3: Current vs Proposed
+        new Paragraph({ text: "3. Current vs Proposed", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: "3.1 Current Situation", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.currentSituation || '' }),
+        new Paragraph({ text: "3.2 Proposed Changes", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.proposedChanges || '' }),
+        new PageBreak(),
 
-      // Section 4
-      new Paragraph({ text: "4. Assumptions & Constraints", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-      new Paragraph({ text: "4.1 Assumptions", heading: HeadingLevel.HEADING_2 }),
-      new Paragraph({ text: data.assumptions }),
-      new Paragraph({ text: "4.2 Constraints", heading: HeadingLevel.HEADING_2 }),
-      new Paragraph({ text: data.constraints }),
-      new PageBreak(),
+        // Section 4
+        new Paragraph({ text: "4. Scope", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: "4.1 In Scope", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.scopeIn || '' }),
+        new Paragraph({ text: "4.2 Out of Scope", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.scopeOut || '' }),
+        new PageBreak(),
 
-      // Section 5
-      new Paragraph({ text: "5. Technical Specifications", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-      new Paragraph({ text: data.technicalApproach }),
-      new PageBreak(),
+        // Section 5
+        new Paragraph({ text: "5. Assumptions & Constraints", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: "5.1 Assumptions", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.assumptions || '' }),
+        new Paragraph({ text: "5.2 Constraints", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.constraints || '' }),
+        new PageBreak(),
 
-      // Section 6
-      new Paragraph({ text: "6. Addendum", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
-      new Paragraph({ text: data.addendum })
+        // Section 6
+        new Paragraph({ text: "6. Solution Overview", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: "6.1 Process Inputs", heading: HeadingLevel.HEADING_2 }),
+        ...data.processInputs.map(item => new Paragraph({ text: `- ${item.criteria} (Source: ${item.source})` })),
+        new Paragraph({ text: "6.2 Expected Results", heading: HeadingLevel.HEADING_2 }),
+        ...data.expectedResults.map(item => new Paragraph({ text: `- ${item.consideration}: ${item.criteria}` })),
+        new PageBreak(),
+
+        // Section 7
+        new Paragraph({ text: "7. Technical Specifications", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: "7.1 Solution Approach", heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ text: data.technicalApproach || '' }),
+        new Paragraph({ text: "7.2 Object Impact Analysis", heading: HeadingLevel.HEADING_2 }),
+        ...data.impactingAreas.map(item => new Paragraph({ text: `- ${item.objectName} [${item.layer}]` })),
+        new PageBreak(),
+
+        // Section 8
+        new Paragraph({ text: "8. Test Strategy", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        ...data.testCasesList.map(item => new Paragraph({ text: `- [${item.stage}] ${item.scenario}: ${item.expectedResult}` })),
+        new PageBreak(),
+
+        // Section 9
+        new Paragraph({ text: "9. Operational Support", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        ...data.operationalSupport.map(item => new Paragraph({ text: `- ${item.component} (Owner: ${item.owner})` })),
+        new PageBreak(),
+
+        // Section 10
+        new Paragraph({ text: "10. Database Master Schema", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        ...data.dbChanges.map(item => new Paragraph({ text: `- ${item.type} ${item.tableName}: ${item.action}` })),
+        new PageBreak(),
+
+        // Section 11
+        new Paragraph({ text: "11. Security & Compliance", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: data.securityCompliance || '' }),
+        new PageBreak(),
+
+        // Section 12
+        new Paragraph({ text: "12. Open Review Points", heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        ...data.openIssues.map(item => new Paragraph({ text: `- ${item.issue} (Owner: ${item.responsibility})` })),
+        new PageBreak(),
+      ] : []),
+
+      // Custom Sections
+      ...(data.customSections || []).sort((a, b) => a.order - b.order).flatMap((s, idx) => [
+        new Paragraph({ text: `${(data.specType === 'blank' ? 1 : 12) + idx}. ${s.title}`, heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+        new Paragraph({ text: s.content || '' }),
+        new PageBreak()
+      ]),
+
+      // Addendum
+      new Paragraph({ text: `${(data.specType === 'blank' ? 1 : 12) + (data.customSections || []).length}. Addendum`, heading: HeadingLevel.HEADING_1, spacing: { before: 400, after: 200 } }),
+      new Paragraph({ text: data.addendum || '' })
     ]
   });
 

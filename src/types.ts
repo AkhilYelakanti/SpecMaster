@@ -75,8 +75,23 @@ export interface OpenIssue {
   targetDate: string;
 }
 
+export interface CustomTemplate {
+  id: string;
+  name: string;
+  description: string;
+  data: SpecData;
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  content: string;
+  order: number;
+}
+
 export interface SpecData {
-  specType: 'new' | 'enhancement';
+  specType: string;
+  templateName?: string;
   projectTitle: string;
   companyName: string;
   documentSubtitle: string;
@@ -103,6 +118,7 @@ export interface SpecData {
   securityCompliance: string;
   openIssues: OpenIssue[];
   addendum: string;
+  customSections: CustomSection[];
 }
 
 export const DEFAULT_SPEC: SpecData = {
@@ -134,5 +150,6 @@ export const DEFAULT_SPEC: SpecData = {
   testCasesList: [],
   securityCompliance: "",
   openIssues: [],
-  addendum: ""
+  addendum: "",
+  customSections: []
 };

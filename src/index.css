@@ -7,10 +7,15 @@
   --font-display: "Playfair Display", serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-corporate-blue: #2563eb;
-  --color-corporate-accent: #1e293b;
+  --color-brand-cyan: #00bcd4;
+  --color-brand-teal: #00838f;
+  --color-brand-dark: #113d3f;
+  --color-brand-bg: #f0fbfc;
   
-  --shadow-blue-glow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
+  --color-blue-50: #e0f7fa;
+  --color-blue-500: var(--color-brand-cyan);
+  --color-blue-600: var(--color-brand-teal);
+  --color-blue-700: var(--color-brand-dark);
 }
 
 @layer base {

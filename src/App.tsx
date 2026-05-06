@@ -23,26 +23,160 @@ import {
   ClipboardList,
   Sparkles, 
   Wand2, 
-  Loader2 
+  Loader2,
+  Upload,
+  CheckCircle,
+  Save,
+  Layers,
+  Bookmark
 } from 'lucide-react';
-import { generateTestCases } from './services/geminiService';
+import { generateTestCases, isAiConfigured } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
-import { DEFAULT_SPEC, SpecData, PersonItem, VersionEntry } from './types';
+import { useEffect, useRef } from 'react';
+import { DEFAULT_SPEC, SpecData, PersonItem, VersionEntry, CustomTemplate } from './types';
 import MarkdownEditor from './components/MarkdownEditor';
 import DocumentLayout from './components/DocumentLayout';
+import Dashboard, { Logo } from './components/Dashboard';
 import { exportToWord, exportToPDF } from './lib/exportUtils';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from './lib/utils';
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export default function App() {
-  const [data, setData] = useState<SpecData>(DEFAULT_SPEC);
+  const [data, setData] = useState<SpecData>(() => {
+    const saved = localStorage.getItem('specmaster_draft');
+    if (!saved) return DEFAULT_SPEC;
+    try {
+      const parsed = JSON.parse(saved);
+      return {
+        ...DEFAULT_SPEC,
+        ...parsed,
+        customSections: parsed.customSections || []
+      };
+    } catch (e) {
+      return DEFAULT_SPEC;
+    }
+  });
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>(() => {
+    const saved = localStorage.getItem('specmaster_templates');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [recentDrafts, setRecentDrafts] = useState<{ id: string, title: string, date: string, data: SpecData }[]>(() => {
+    const saved = localStorage.getItem('specmaster_recent_sessions');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [page, setPage] = useState<'dashboard' | 'editor'>('dashboard');
   const [view, setView] = useState<'edit' | 'preview'>('edit');
   const [activeSection, setActiveSection] = useState('cover');
-  const [showTypeSelector, setShowTypeSelector] = useState(true);
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [showTemplateSaver, setShowTemplateSaver] = useState(false);
+  const [templateForm, setTemplateForm] = useState({ name: '', description: '' });
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Scroll to top when changing page
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page]);
+
+  useEffect(() => {
+    localStorage.setItem('specmaster_draft', JSON.stringify(data));
+    setLastSaved(new Date());
+
+    // Update or add to recent drafts
+    if (data.projectTitle && data.projectTitle !== DEFAULT_SPEC.projectTitle) {
+      setRecentDrafts(prev => {
+        const existing = prev.find(d => d.title === data.projectTitle);
+        const entry = {
+          id: existing?.id || crypto.randomUUID(),
+          title: data.projectTitle,
+          date: new Date().toLocaleDateString(),
+          data: data
+        };
+        const updated = existing 
+          ? prev.map(d => d.id === existing.id ? entry : d)
+          : [entry, ...prev].slice(0, 5);
+        
+        localStorage.setItem('specmaster_recent_sessions', JSON.stringify(updated));
+        return updated;
+      });
+    }
+  }, [data]);
+
+  useEffect(() => {
+    localStorage.setItem('specmaster_templates', JSON.stringify(customTemplates));
+  }, [customTemplates]);
+
+  const handleExportJSON = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${data.projectTitle.replace(/\s+/g, '_')}_Spec_Draft.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement> | string) => {
+    let content = "";
+    const processContent = (jsonString: string) => {
+      try {
+        const importedData = JSON.parse(jsonString);
+        // Robust merge with default spec to handle missing fields in older versions
+        const mergedData = {
+          ...DEFAULT_SPEC,
+          ...importedData,
+          // Deep merge simple arrays if needed, or just ensure they exist
+          customSections: importedData.customSections || [],
+          versions: importedData.versions || DEFAULT_SPEC.versions,
+          reviewers: importedData.reviewers || [],
+          approvals: importedData.approvals || [],
+          processInputs: importedData.processInputs || [],
+          expectedResults: importedData.expectedResults || [],
+          impactingAreas: importedData.impactingAreas || [],
+          dbChanges: importedData.dbChanges || [],
+          testCasesList: importedData.testCasesList || [],
+          operationalSupport: importedData.operationalSupport || [],
+          openIssues: importedData.openIssues || []
+        };
+        setData(mergedData);
+        setPage('editor');
+        setShowTypeSelector(false);
+      } catch (err) {
+        alert("Invalid Spec JSON file: " + (err instanceof Error ? err.message : "Parsing error"));
+      }
+    };
+
+    if (typeof e === 'string') {
+      processContent(e);
+    } else {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        processContent(event.target?.result as string);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  const isSectionComplete = (sectionId: string): boolean => {
+    switch (sectionId) {
+      case 'cover': return !!data.projectTitle && !!data.documentSubtitle;
+      case 'control': return data.versions.length > 0 || data.reviewers.length > 0;
+      case 'intro': return !!data.introduction && data.introduction.length > 20;
+      case 'business': return !!data.businessNeed && data.businessNeed.length > 20;
+      case 'situation': return !!data.currentSituation && !!data.proposedChanges;
+      case 'scope': return !!data.scopeIn;
+      case 'solution': return data.processInputs.length > 0 || data.expectedResults.length > 0;
+      case 'tech': return !!data.technicalApproach || data.impactingAreas.length > 0;
+      case 'db_master': return data.dbChanges.length > 0 || !!data.dbScripts;
+      case 'test': return data.testCasesList.length > 0;
+      case 'support': return data.operationalSupport.length > 0 || !!data.securityCompliance;
+      case 'issues': return data.openIssues.length > 0;
+      case 'addendum': return !!data.addendum;
+      default: return false;
+    }
+  };
 
   const [isGeneratingTests, setIsGeneratingTests] = useState(false);
 
@@ -77,12 +211,79 @@ export default function App() {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const selectSpecType = (type: 'new' | 'enhancement') => {
-    setData(prev => ({ 
-      ...prev, 
-      specType: type,
-      projectTitle: type === 'new' ? 'NEW PROJECT SPECIFICATION' : 'FIX / ENHANCEMENT SPECIFICATION'
-    }));
+  const saveAsTemplate = (name: string, description: string) => {
+    const newTemplate: CustomTemplate = {
+      id: crypto.randomUUID(),
+      name,
+      description,
+      data: { ...data, projectTitle: name }
+    };
+    setCustomTemplates(prev => [...prev, newTemplate]);
+  };
+
+  const deleteTemplate = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCustomTemplates(prev => prev.filter(t => t.id !== id));
+  };
+
+  const selectSpecType = (type: string, template?: { data: SpecData }) => {
+    if (template) {
+      setData({ ...template.data });
+    } else if (type === 'blank') {
+      setData({
+        ...DEFAULT_SPEC,
+        specType: 'blank',
+        projectTitle: 'NEW CUSTOM SPECIFICATION',
+        introduction: '',
+        businessNeed: '',
+        currentSituation: '',
+        proposedChanges: '',
+        scopeIn: '',
+        scopeOut: '',
+        technicalApproach: '',
+        addendum: '',
+        securityCompliance: '',
+        versions: [{ id: '1', version: '1.0', date: new Date().toLocaleDateString(), author: '', comments: 'Initial Draft' }],
+        reviewers: [],
+        approvals: [],
+        processInputs: [],
+        expectedResults: [],
+        impactingAreas: [],
+        dbChanges: [],
+        testCasesList: [],
+        operationalSupport: [],
+        openIssues: [],
+        customSections: []
+      });
+    } else {
+      setData({
+        ...DEFAULT_SPEC,
+        specType: type,
+        projectTitle: type === 'new' ? 'NEW PROJECT SPECIFICATION' : 'FIX / ENHANCEMENT SPECIFICATION',
+        // Reset fields for fresh start
+        introduction: '',
+        businessNeed: '',
+        currentSituation: '',
+        proposedChanges: '',
+        scopeIn: '',
+        scopeOut: '',
+        technicalApproach: '',
+        addendum: '',
+        securityCompliance: '',
+        versions: [],
+        reviewers: [],
+        approvals: [],
+        processInputs: [],
+        expectedResults: [],
+        impactingAreas: [],
+        dbChanges: [],
+        testCasesList: [],
+        operationalSupport: [],
+        openIssues: []
+      });
+    }
+    setPage('editor');
+    setActiveSection('cover');
     setShowTypeSelector(false);
   };
 
@@ -129,22 +330,170 @@ export default function App() {
   const sidebarItems = [
     { id: 'cover', label: 'Cover Page', icon: <FileText size={18} /> },
     { id: 'control', label: 'Control & Approvals', icon: <Users size={18} /> },
-    { id: 'business', label: 'Business Need', icon: <Target size={18} /> },
-    ...(data.specType === 'enhancement' ? [
-      { id: 'situation', label: 'Current vs Proposed', icon: <Target size={18} /> }
+    ...(data.specType !== 'blank' ? [
+      { id: 'business', label: 'Business Need', icon: <Target size={18} /> },
+      ...(data.specType === 'enhancement' ? [
+        { id: 'situation', label: 'Current vs Proposed', icon: <Target size={18} /> }
+      ] : []),
+      { id: 'scope', label: 'Scope', icon: <ClipboardList size={18} /> },
+      { id: 'solution', label: 'Solution Overview', icon: <Layout size={18} /> },
+      { id: 'tech', label: 'Technical Solution', icon: <Settings size={18} /> },
+      { id: 'db_master', label: 'Database Master', icon: <Settings size={18} /> },
+      { id: 'test', label: 'Test Strategy', icon: <CheckCircle2 size={18} /> },
+      { id: 'support', label: 'Operational Support', icon: <ShieldCheck size={18} /> },
+      { id: 'issues', label: 'Open Issues', icon: <ClipboardList size={18} /> },
     ] : []),
-    { id: 'scope', label: 'Scope', icon: <ClipboardList size={18} /> },
-    { id: 'solution', label: 'Solution Overview', icon: <Layout size={18} /> },
-    { id: 'tech', label: 'Technical Solution', icon: <Settings size={18} /> },
-    { id: 'db_master', label: 'Database Master', icon: <Settings size={18} /> },
-    { id: 'test', label: 'Test Strategy', icon: <CheckCircle2 size={18} /> },
-    { id: 'support', label: 'Operational Support', icon: <ShieldCheck size={18} /> },
-    { id: 'issues', label: 'Open Issues', icon: <ClipboardList size={18} /> },
+    ...(data.customSections || []).sort((a, b) => a.order - b.order).map(s => ({
+      id: `custom-${s.id}`,
+      label: s.title,
+      icon: <FileText size={18} />,
+      isCustom: true
+    })),
     { id: 'addendum', label: 'Addendum', icon: <FileText size={18} /> },
   ];
 
+  const addCustomSection = () => {
+    const sections = data.customSections || [];
+    const newSection = {
+      id: crypto.randomUUID(),
+      title: 'New Section',
+      content: '',
+      order: sections.length
+    };
+    setData(prev => ({
+      ...prev,
+      customSections: [...(prev.customSections || []), newSection]
+    }));
+    setActiveSection(`custom-${newSection.id}`);
+  };
+
+  const removeCustomSection = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setData(prev => ({
+      ...prev,
+      customSections: (prev.customSections || []).filter(s => s.id !== id)
+    }));
+    if (activeSection === `custom-${id}`) {
+      setActiveSection('cover');
+    }
+  };
+
+  const updateCustomSection = (id: string, key: 'title' | 'content', value: string) => {
+    setData(prev => ({
+      ...prev,
+      customSections: (prev.customSections || []).map(s => s.id === id ? { ...s, [key]: value } : s)
+    }));
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+    <div className={cn(
+      "bg-brand-bg font-sans text-brand-dark min-h-screen",
+      page === 'editor' && "h-screen overflow-hidden flex flex-col"
+    )}>
+      {/* Shared Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleImportJSON} 
+        accept=".json" 
+        className="hidden" 
+      />
+
+      {page === 'dashboard' ? (
+        <Dashboard 
+          onStartNew={selectSpecType}
+          onImport={() => fileInputRef.current?.click()}
+          recentDrafts={recentDrafts}
+          customTemplates={customTemplates}
+          onDeleteTemplate={(id) => setCustomTemplates(prev => prev.filter(t => t.id !== id))}
+          onContinueDraft={(d) => { 
+            // Ensure we merge defaults to handle legacy data
+            const normalizedData = {
+              ...DEFAULT_SPEC,
+              ...d,
+              customSections: d.customSections || [],
+              versions: d.versions || DEFAULT_SPEC.versions,
+              reviewers: d.reviewers || [],
+              approvals: d.approvals || [],
+              processInputs: d.processInputs || [],
+              expectedResults: d.expectedResults || [],
+              impactingAreas: d.impactingAreas || [],
+              dbChanges: d.dbChanges || [],
+              testCasesList: d.testCasesList || [],
+              operationalSupport: d.operationalSupport || [],
+              openIssues: d.openIssues || []
+            };
+            setData(normalizedData); 
+            setPage('editor'); 
+          }}
+        />
+      ) : (
+        <>
+          {/* Save Template Overlay */}
+      {showTemplateSaver && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+          >
+            <div className="p-8 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <Layout size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black tracking-tight text-slate-900">Save as Template</h2>
+                  <p className="text-xs text-slate-500 font-medium">Create a reusable blueprint from this draft</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Template Name</label>
+                  <input 
+                    type="text" 
+                    value={templateForm.name}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., API Microservice Spec"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-1">Description</label>
+                  <textarea 
+                    value={templateForm.description}
+                    onChange={(e) => setTemplateForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Briefly describe what this template is for..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all min-h-[80px]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setShowTemplateSaver(false)}
+                  className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  disabled={!templateForm.name}
+                  onClick={() => {
+                    saveAsTemplate(templateForm.name, templateForm.description);
+                    setShowTemplateSaver(false);
+                    setTemplateForm({ name: '', description: '' });
+                  }}
+                  className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-emerald-200"
+                >
+                  Save Template
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Type Selector Overlay */}
       {showTypeSelector && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
@@ -154,36 +503,57 @@ export default function App() {
             className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden"
           >
             <div className="p-12 text-center space-y-6">
-              <div className="mx-auto w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner">
+              <div className="mx-auto w-16 h-16 bg-brand-cyan/10 text-brand-teal rounded-2xl flex items-center justify-center shadow-inner ring-1 ring-brand-cyan/20">
                 <FileText size={32} />
               </div>
               <div className="space-y-2">
-                <h1 className="text-3xl font-black tracking-tight text-slate-900">What are you building?</h1>
-                <p className="text-slate-500 font-medium">Select a template to initialize your technical specification</p>
+                <h1 className="text-3xl font-black tracking-tight text-brand-dark uppercase">What are you building?</h1>
+                <p className="text-slate-500 font-medium tracking-tight">Select a template to initialize your technical specification</p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 <button 
                   onClick={() => selectSpecType('new')}
-                  className="group flex flex-col items-center p-8 bg-slate-50 hover:bg-blue-600 rounded-3xl transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl text-left"
+                  className="group flex flex-col items-center p-6 bg-brand-bg hover:bg-brand-teal rounded-2xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl text-left border border-brand-cyan/10"
                 >
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-500 text-blue-600 group-hover:text-white transition-colors shadow-sm">
-                    <Plus size={24} />
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 group-hover:bg-brand-cyan text-brand-teal group-hover:text-white transition-colors shadow-sm">
+                    <Plus size={20} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-white transition-colors">New Project</h3>
-                  <p className="text-sm text-slate-500 group-hover:text-blue-100 transition-colors text-center">Complete specification for a brand new system or standalone asset.</p>
+                  <h3 className="text-lg font-bold mb-1 group-hover:text-white transition-colors">New Project</h3>
+                  <p className="text-[11px] text-slate-500 group-hover:text-cyan-50 transition-colors text-center leading-tight">Complete specification for a brand new system or standalone asset.</p>
                 </button>
                 
                 <button 
                   onClick={() => selectSpecType('enhancement')}
-                  className="group flex flex-col items-center p-8 bg-slate-50 hover:bg-orange-600 rounded-3xl transition-all duration-300 transform hover:-translate-y-2 hover:shadow-2xl text-left"
+                  className="group flex flex-col items-center p-6 bg-brand-bg hover:bg-brand-dark rounded-2xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl text-left border border-brand-cyan/10"
                 >
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 group-hover:bg-orange-500 text-orange-600 group-hover:text-white transition-colors shadow-sm">
-                    <Settings size={24} />
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 group-hover:bg-slate-700 text-brand-dark group-hover:text-white transition-colors shadow-sm">
+                    <Settings size={20} />
                   </div>
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-white transition-colors">Fix / Enhancement</h3>
-                  <p className="text-sm text-slate-500 group-hover:text-orange-100 transition-colors text-center">Focus on modifications, existing system fixes, or functional upgrades.</p>
+                  <h3 className="text-lg font-bold mb-1 group-hover:text-white transition-colors">Fix / Enhancement</h3>
+                  <p className="text-[11px] text-slate-500 group-hover:text-slate-300 transition-colors text-center leading-tight">Focus on modifications, existing system fixes, or functional upgrades.</p>
                 </button>
+
+                {customTemplates.map(template => (
+                  <button 
+                    key={template.id}
+                    onClick={() => selectSpecType('custom', template)}
+                    className="group relative flex flex-col items-center p-6 bg-slate-50 hover:bg-emerald-600 rounded-2xl transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl text-left border border-slate-100"
+                  >
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 group-hover:bg-emerald-500 text-emerald-600 group-hover:text-white transition-colors shadow-sm">
+                      <Layout size={20} />
+                    </div>
+                    <h3 className="text-lg font-bold mb-1 group-hover:text-white transition-colors truncate w-full text-center">{template.name}</h3>
+                    <p className="text-[11px] text-slate-500 group-hover:text-emerald-100 transition-colors text-center leading-tight line-clamp-2">{template.description}</p>
+                    
+                    <button 
+                      onClick={(e) => deleteTemplate(template.id, e)}
+                      className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-white hover:bg-red-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </button>
+                ))}
               </div>
               
               <div className="pt-6">
@@ -196,40 +566,95 @@ export default function App() {
         </div>
       )}
 
-      {/* Top Navigation - Sleek Pro Style */}
-      <nav className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 shadow-sm z-10 no-print">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <div className="w-4 h-4 border-2 border-white rounded-sm"></div>
-          </div>
-          <span className="font-bold text-xl tracking-tight text-slate-800">SpecMaster Pro</span>
-        </div>
-
-        <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-slate-400">Project:</span>
-            <span className="text-slate-800 font-bold">{data.projectTitle}</span>
-          </div>
-          <div className="h-4 w-px bg-slate-200"></div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-slate-600">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            Draft Active
+      {/* Top Navigation - Professional Specification Editor Style */}
+      <nav className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0 shadow-sm z-50 no-print">
+        <div className="flex items-center gap-4 cursor-pointer group hover:opacity-80 transition-opacity" onClick={() => setPage('dashboard')}>
+          <Logo className="w-9 h-9" size={18} />
+          <div className="hidden lg:block border-l border-slate-200 pl-4">
+            <h1 className="text-lg font-black tracking-tight leading-none text-brand-dark flex items-center gap-1.5">
+              SPEC MASTER <span className="text-brand-cyan">PRO</span>
+            </h1>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Editor Environment</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex-1 flex items-center justify-center px-8">
+          <div className="flex items-center gap-4 bg-slate-50 px-5 py-2 rounded-2xl border border-slate-200 shadow-inner group transition-all hover:bg-white hover:border-brand-cyan/30">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-brand-cyan shadow-[0_0_8px_rgba(0,188,212,0.5)]" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Spec Status:</span>
+              <span className="text-sm font-black text-brand-dark truncate max-w-[200px] md:max-w-[400px]">
+                {data.projectTitle || "Untitled Specification"}
+              </span>
+            </div>
+            <div className="h-3 w-px bg-slate-300"></div>
+            <div className="flex items-center gap-1.5">
+              <Save size={12} className="text-brand-teal" />
+              <span className="text-[9px] font-bold text-slate-400 uppercase">Live Sync</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Action Toolbar */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 mr-2 shadow-sm">
+            <button 
+              onClick={() => setShowTemplateSaver(true)}
+              title="Save as Template"
+              className="p-2 text-slate-500 hover:text-brand-teal hover:bg-white rounded-lg transition-all"
+            >
+              <Bookmark size={18} />
+            </button>
+            <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              title="Import Draft"
+              className="p-2 text-slate-500 hover:text-brand-teal hover:bg-white rounded-lg transition-all"
+            >
+              <Upload size={18} />
+            </button>
+            <button 
+              onClick={handleExportJSON}
+              title="Export Draft"
+              className="p-2 text-slate-500 hover:text-brand-teal hover:bg-white rounded-lg transition-all"
+            >
+              <Download size={18} />
+            </button>
+            <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+            <button 
+              onClick={() => {
+                setPage('dashboard');
+                setTimeout(() => {
+                  const settings = document.querySelector('nav');
+                  settings?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              title="AI Settings"
+              className="p-2 text-slate-500 hover:text-brand-teal hover:bg-white rounded-lg transition-all"
+            >
+              <Settings size={18} />
+            </button>
+          </div>
+
           <button 
             onClick={() => setView(view === 'edit' ? 'preview' : 'edit')}
-            className="px-4 py-2 text-slate-600 hover:bg-slate-50 font-bold transition-colors"
+            className={cn(
+              "px-5 py-2.5 font-bold rounded-xl transition-all flex items-center gap-2 shadow-md hover:-translate-y-0.5 active:translate-y-0",
+              view === 'edit' 
+                ? "bg-brand-dark text-white shadow-brand-dark/20 hover:bg-slate-800" 
+                : "bg-white text-brand-dark border border-slate-200 hover:bg-slate-50"
+            )}
           >
-            {view === 'edit' ? 'Full Preview' : 'Back to Editor'}
+            {view === 'edit' ? <Eye size={18} /> : <FileText size={18} />}
+            <span className="hidden sm:inline">{view === 'edit' ? 'Full Preview' : 'Back to Editor'}</span>
           </button>
+
           <button 
             onClick={handleExportWord}
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2"
+            className="flex px-5 py-2.5 bg-gradient-to-r from-brand-cyan to-brand-teal text-white font-bold rounded-xl shadow-lg shadow-brand-cyan/25 hover:shadow-brand-teal/40 hover:-translate-y-0.5 active:translate-y-0 transition-all items-center gap-2"
           >
-            <FileDown size={16} />
-            Share Word
+            <FileDown size={18} />
+            <span className="hidden md:inline">Export Word</span>
           </button>
         </div>
       </nav>
@@ -238,25 +663,52 @@ export default function App() {
         {/* Sidebar - Precise theme style */}
         <aside className="w-64 bg-white border-r border-slate-200 flex flex-col p-4 shrink-0 no-print">
           <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6 px-3">Document Structure</h3>
-          <div className="space-y-1 overflow-y-auto flex-1">
-            {sidebarItems.map((item, idx) => (
-              <button
-                key={item.id}
-                onClick={() => { setView('edit'); setActiveSection(item.id); }}
-                className={cn(
-                  "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-200",
-                  activeSection === item.id && view === 'edit'
-                    ? "bg-blue-50 text-blue-700 font-bold shadow-sm"
-                    : "text-slate-600 hover:bg-slate-50 font-medium"
-                )}
+            <div className="space-y-1 overflow-y-auto flex-1">
+              {sidebarItems.map((item, idx) => {
+                const complete = item.id.startsWith('custom-') ? !!(data.customSections || []).find(s => `custom-${s.id}` === item.id)?.content : isSectionComplete(item.id);
+                const isCustom = item.id.startsWith('custom-');
+                
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => { setView('edit'); setActiveSection(item.id); }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group",
+                      activeSection === item.id && view === 'edit'
+                        ? "bg-blue-50 text-blue-700 font-bold shadow-sm"
+                        : "text-slate-600 hover:bg-slate-50 font-medium"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={cn("text-[10px] font-bold", activeSection === item.id && view === 'edit' ? "text-blue-500" : "text-slate-400")}>
+                        {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                      </span>
+                      <span className="truncate max-w-[140px] text-left">{item.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {isCustom && (
+                        <Trash2 
+                          size={12} 
+                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-all" 
+                          onClick={(e) => removeCustomSection(item.id.replace('custom-', ''), e)}
+                        />
+                      )}
+                      {complete && (
+                        <CheckCircle className="text-green-500 shrink-0" size={14} />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+              
+              <button 
+                onClick={addCustomSection}
+                className="w-full flex items-center gap-3 px-4 py-3 mt-4 text-xs font-bold text-slate-500 border border-dashed border-slate-200 rounded-xl hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all"
               >
-                <span className={cn("text-[10px] font-bold", activeSection === item.id && view === 'edit' ? "text-blue-500" : "text-slate-400")}>
-                  0{idx + 1}
-                </span>
-                {item.label}
+                <Plus size={14} />
+                Add Custom Section
               </button>
-            ))}
-          </div>
+            </div>
 
           <div className="mt-auto pt-6 space-y-4">
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -655,6 +1107,7 @@ export default function App() {
                               >
                                 {isGeneratingTests ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                                 AI Generate Scenarios
+                                {!isAiConfigured() && <span className="ml-2 px-1.5 py-0.5 bg-white/20 rounded-md text-[9px] border border-white/10 uppercase">Demo</span>}
                               </button>
                               <button onClick={() => addListItem('testCasesList')} className="flex items-center gap-1 text-sm text-blue-600 font-bold hover:text-blue-700">
                                 <Plus size={16} /> Add Test Case
@@ -778,6 +1231,32 @@ export default function App() {
                           </div>
                         </section>
                       )}
+
+                      {activeSection.startsWith('custom-') && (() => {
+                        const sectionId = activeSection.replace('custom-', '');
+                        const section = data.customSections.find(s => s.id === sectionId);
+                        if (!section) return null;
+                        return (
+                          <div className="space-y-8">
+                            <div className="space-y-3">
+                              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider pl-1">Section Title</label>
+                              <input 
+                                type="text"
+                                value={section.title}
+                                onChange={(e) => updateCustomSection(sectionId, 'title', e.target.value)}
+                                className="w-full px-6 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-black text-xl text-slate-900 shadow-sm"
+                                placeholder="Enter section title..."
+                              />
+                            </div>
+                            <MarkdownEditor 
+                              value={section.content} 
+                              onChange={(v) => updateCustomSection(sectionId, 'content', v)} 
+                              label={`${section.title} Content`} 
+                              context={getAiContext(section.title)}
+                            />
+                          </div>
+                        );
+                      })()}
                     </motion.div>
                   ) : (
                     <motion.div
@@ -840,6 +1319,8 @@ export default function App() {
           )}
         </main>
       </div>
+      </>
+      )}
 
       {/* Print View Wrapper */}
       <div className="hidden print:block absolute inset-0 bg-white z-[100]">
