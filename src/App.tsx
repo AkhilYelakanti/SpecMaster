@@ -20,8 +20,12 @@ import {
   Users,
   Target,
   ShieldCheck,
-  ClipboardList
+  ClipboardList,
+  Sparkles, 
+  Wand2, 
+  Loader2 
 } from 'lucide-react';
+import { generateTestCases } from './services/geminiService';
 import { motion, AnimatePresence } from 'motion/react';
 import { DEFAULT_SPEC, SpecData, PersonItem, VersionEntry } from './types';
 import MarkdownEditor from './components/MarkdownEditor';
@@ -39,6 +43,35 @@ export default function App() {
   const [view, setView] = useState<'edit' | 'preview'>('edit');
   const [activeSection, setActiveSection] = useState('cover');
   const [showTypeSelector, setShowTypeSelector] = useState(true);
+
+  const [isGeneratingTests, setIsGeneratingTests] = useState(false);
+
+  const getAiContext = (sectionName: string) => ({
+    projectTitle: data.projectTitle,
+    projectSubtitle: data.documentSubtitle,
+    sectionName
+  });
+
+  const handleAiGenerateTests = async () => {
+    setIsGeneratingTests(true);
+    try {
+      const scenarios = await generateTestCases(data.businessNeed, data.proposedChanges || data.introduction);
+      if (scenarios && Array.isArray(scenarios)) {
+        const newTests = scenarios.map((s: any) => ({
+          id: crypto.randomUUID(),
+          stage: s.stage || 'Functional',
+          scenario: s.scenario || '',
+          testData: '',
+          expectedResult: s.expectedResult || ''
+        }));
+        setData(prev => ({ ...prev, testCasesList: [...prev.testCasesList, ...newTests] }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingTests(false);
+    }
+  };
 
   const updateField = (field: keyof SpecData, value: any) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -372,24 +405,54 @@ export default function App() {
                       )}
 
                       {activeSection === 'intro' && (
-                        <MarkdownEditor value={data.introduction} onChange={(v) => updateField('introduction', v)} label="1. Introduction" />
+                        <MarkdownEditor 
+                          value={data.introduction} 
+                          onChange={(v) => updateField('introduction', v)} 
+                          label="1. Introduction" 
+                          context={getAiContext('Introduction')}
+                        />
                       )}
 
                       {activeSection === 'situation' && (
                         <div className="space-y-8">
-                          <MarkdownEditor value={data.currentSituation} onChange={(v) => updateField('currentSituation', v)} label="Current Situation (Existing State)" />
-                          <MarkdownEditor value={data.proposedChanges} onChange={(v) => updateField('proposedChanges', v)} label="Proposed Changes (Fix / Enhancement)" />
+                          <MarkdownEditor 
+                            value={data.currentSituation} 
+                            onChange={(v) => updateField('currentSituation', v)} 
+                            label="Current Situation (Existing State)" 
+                            context={getAiContext('Current Situation (As-Is)')}
+                          />
+                          <MarkdownEditor 
+                            value={data.proposedChanges} 
+                            onChange={(v) => updateField('proposedChanges', v)} 
+                            label="Proposed Changes (Fix / Enhancement)" 
+                            context={getAiContext('Proposed Solution (To-Be)')}
+                          />
                         </div>
                       )}
 
                       {activeSection === 'business' && (
-                        <MarkdownEditor value={data.businessNeed} onChange={(v) => updateField('businessNeed', v)} label="2. Basic Business Need" />
+                        <MarkdownEditor 
+                          value={data.businessNeed} 
+                          onChange={(v) => updateField('businessNeed', v)} 
+                          label="2. Basic Business Need" 
+                          context={getAiContext('Business Need')}
+                        />
                       )}
 
                       {activeSection === 'scope' && (
                         <div className="space-y-6">
-                          <MarkdownEditor value={data.scopeIn} onChange={(v) => updateField('scopeIn', v)} label="3.1 In-scope Content" />
-                          <MarkdownEditor value={data.scopeOut} onChange={(v) => updateField('scopeOut', v)} label="3.2 Out-of-scope Content" />
+                          <MarkdownEditor 
+                            value={data.scopeIn} 
+                            onChange={(v) => updateField('scopeIn', v)} 
+                            label="3.1 In-scope Content" 
+                            context={getAiContext('In-Scope Items')}
+                          />
+                          <MarkdownEditor 
+                            value={data.scopeOut} 
+                            onChange={(v) => updateField('scopeOut', v)} 
+                            label="3.2 Out-of-scope Content" 
+                            context={getAiContext('Out-of-Scope Items')}
+                          />
                         </div>
                       )}
 
@@ -461,7 +524,12 @@ export default function App() {
 
                       {activeSection === 'tech' && (
                         <div className="space-y-12">
-                          <MarkdownEditor value={data.technicalApproach} onChange={(v) => updateField('technicalApproach', v)} label="6.1 Technical Specification" />
+                          <MarkdownEditor 
+                            value={data.technicalApproach} 
+                            onChange={(v) => updateField('technicalApproach', v)} 
+                            label="6.1 Technical Specification" 
+                            context={getAiContext('Technical Solution / Implementation Details')}
+                          />
                           
                           <section className="space-y-4">
                             <div className="flex items-center justify-between">
@@ -567,16 +635,31 @@ export default function App() {
                       )}
 
                       {activeSection === 'addendum' && (
-                        <MarkdownEditor value={data.addendum} onChange={(v) => updateField('addendum', v)} label="Addendum (Additional Information)" />
+                        <MarkdownEditor 
+                          value={data.addendum} 
+                          onChange={(v) => updateField('addendum', v)} 
+                          label="Addendum (Additional Information)" 
+                          context={getAiContext('Addendum')}
+                        />
                       )}
 
                       {activeSection === 'test' && (
                         <div className="space-y-8">
                            <div className="flex items-center justify-between">
                             <h3 className="text-lg font-bold">7. Test Case Specification</h3>
-                            <button onClick={() => addListItem('testCasesList')} className="flex items-center gap-1 text-sm text-blue-600 font-bold hover:text-blue-700">
-                              <Plus size={16} /> Add Test Case
-                            </button>
+                            <div className="flex gap-3">
+                              <button 
+                                onClick={handleAiGenerateTests} 
+                                disabled={isGeneratingTests}
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:shadow-xl transition-all disabled:opacity-50"
+                              >
+                                {isGeneratingTests ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                                AI Generate Scenarios
+                              </button>
+                              <button onClick={() => addListItem('testCasesList')} className="flex items-center gap-1 text-sm text-blue-600 font-bold hover:text-blue-700">
+                                <Plus size={16} /> Add Test Case
+                              </button>
+                            </div>
                           </div>
                           
                           <div className="space-y-4">
@@ -654,7 +737,12 @@ export default function App() {
                               </table>
                             </div>
                           </section>
-                          <MarkdownEditor value={data.securityCompliance} onChange={(v) => updateField('securityCompliance', v)} label="9. Security & Compliance (Additional Notes)" />
+                          <MarkdownEditor 
+                            value={data.securityCompliance} 
+                            onChange={(v) => updateField('securityCompliance', v)} 
+                            label="9. Security & Compliance (Additional Notes)" 
+                            context={getAiContext('Security and Compliance Considerations')}
+                          />
                         </div>
                       )}
 

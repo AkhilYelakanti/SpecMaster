@@ -5,17 +5,54 @@
 
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Eye, Code } from 'lucide-react';
+import { Eye, Code, Sparkles, Loader2, Wand2 } from 'lucide-react';
+import { suggestContent, improveContent } from '../services/geminiService';
 
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
   label?: string;
   id?: string;
+  context?: {
+    projectTitle: string;
+    projectSubtitle: string;
+    sectionName: string;
+  };
 }
 
-export default function MarkdownEditor({ value, onChange, label, id }: MarkdownEditorProps) {
+export default function MarkdownEditor({ value, onChange, label, id, context }: MarkdownEditorProps) {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleAiSuggest = async () => {
+    if (!context) return;
+    setIsGenerating(true);
+    try {
+      const suggestion = await suggestContent(context.sectionName, context.projectTitle, context.projectSubtitle, value);
+      if (suggestion) {
+        onChange(suggestion);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleAiImprove = async () => {
+    if (!value) return;
+    setIsGenerating(true);
+    try {
+      const improved = await improveContent(value);
+      if (improved) {
+        onChange(improved);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handlePaste = async (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -68,7 +105,29 @@ export default function MarkdownEditor({ value, onChange, label, id }: MarkdownE
               </div>
             </button>
           </div>
-          <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Standardized Formatting • Paste Images</span>
+          <div className="flex items-center gap-2">
+            {context && (
+              <button
+                onClick={handleAiSuggest}
+                disabled={isGenerating}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 transition-all shadow-sm"
+              >
+                {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                AI Suggest
+              </button>
+            )}
+            {value && (
+              <button
+                onClick={handleAiImprove}
+                disabled={isGenerating}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-all"
+              >
+                {isGenerating ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+                Rewrite
+              </button>
+            )}
+            <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold hidden sm:inline">Standardized Formatting • Paste Images</span>
+          </div>
         </div>
 
         {mode === 'edit' ? (
