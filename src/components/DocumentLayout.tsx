@@ -190,7 +190,9 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
           <section id="section-1">
             <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">1. Introduction</h1>
             <div className="prose-p:text-slate-600 prose-p:leading-relaxed">
-              <ReactMarkdown>{data.introduction || '*No introduction provided.*'}</ReactMarkdown>
+              <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                {data.introduction || '*No introduction provided.*'}
+              </ReactMarkdown>
             </div>
           </section>
         </div>
@@ -202,7 +204,9 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
         <div className="flex-1 markdown-body prose prose-slate max-w-none">
           <section id="section-2">
             <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">2. Business Need</h1>
-            <ReactMarkdown>{data.businessNeed || '*No business need provided.*'}</ReactMarkdown>
+            <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+              {data.businessNeed || '*No business need provided.*'}
+            </ReactMarkdown>
           </section>
         </div>
         <PageFooter pageNum={5} />
@@ -216,11 +220,15 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
             <div className="grid grid-cols-1 gap-12 mt-10">
               <div className="bg-slate-50 border-l-4 border-slate-400 p-8 rounded-r-xl">
                 <h3 className="!mt-0 text-slate-800 font-black uppercase text-sm tracking-widest mb-4">A. Current Situation (As-Is)</h3>
-                <ReactMarkdown>{data.currentSituation || '*Not specified.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.currentSituation || '*Not specified.*'}
+                </ReactMarkdown>
               </div>
               <div className="bg-blue-50 border-l-4 border-corporate-blue p-8 rounded-r-xl">
                 <h3 className="!mt-0 text-corporate-blue font-black uppercase text-sm tracking-widest mb-4">B. Proposed Solution (To-Be)</h3>
-                <ReactMarkdown>{data.proposedChanges || '*Not specified.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.proposedChanges || '*Not specified.*'}
+                </ReactMarkdown>
               </div>
             </div>
           </section>
@@ -236,11 +244,15 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
             <div className="space-y-12">
               <div className="bg-green-50/30 p-6 rounded-xl border border-green-100">
                 <h2 className="!mt-0 text-green-700 border-b border-green-200 pb-2">4.1 In-scope</h2>
-                <ReactMarkdown>{data.scopeIn || '*No in-scope items listed.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.scopeIn || '*No in-scope items listed.*'}
+                </ReactMarkdown>
               </div>
               <div className="bg-rose-50/30 p-6 rounded-xl border border-rose-100">
                 <h2 className="!mt-0 text-rose-700 border-b border-rose-200 pb-2">4.2 Out-of-Scope</h2>
-                <ReactMarkdown>{data.scopeOut || '*No out-of-scope items listed.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.scopeOut || '*No out-of-scope items listed.*'}
+                </ReactMarkdown>
               </div>
             </div>
           </section>
@@ -256,11 +268,15 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
             <div className="space-y-12">
               <div>
                 <h2>5.1 Assumptions</h2>
-                <ReactMarkdown>{data.assumptions || '*No assumptions listed.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.assumptions || '*No assumptions listed.*'}
+                </ReactMarkdown>
               </div>
               <div>
                 <h2>5.2 Constraints</h2>
-                <ReactMarkdown>{data.constraints || '*No constraints listed.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.constraints || '*No constraints listed.*'}
+                </ReactMarkdown>
               </div>
             </div>
           </section>
@@ -331,7 +347,9 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
             <div className="space-y-12">
               <div>
                 <h2>7.1 Solution Approach</h2>
-                <ReactMarkdown>{data.technicalApproach || '*Technical strategy not provided.*'}</ReactMarkdown>
+                <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                  {data.technicalApproach || '*Technical strategy not provided.*'}
+                </ReactMarkdown>
               </div>
               <div className="overflow-hidden border border-slate-200 rounded-xl">
                  <div className="bg-slate-50 p-4 font-bold border-b border-slate-200">7.2 Component Impact Analysis</div>
@@ -473,7 +491,9 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
           <section id="section-11">
             <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">11. Security & Compliance</h1>
             <div className="bg-blue-50/50 p-10 rounded-2xl border border-blue-100">
-               <ReactMarkdown>{data.securityCompliance || '*Identity & Access Management protocols not specified.*'}</ReactMarkdown>
+               <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+                 {data.securityCompliance || '*Identity & Access Management protocols not specified.*'}
+               </ReactMarkdown>
             </div>
           </section>
         </div>
@@ -509,7 +529,9 @@ export default function DocumentLayout({ data }: DocumentLayoutProps) {
 
           <section id="section-13">
             <h1 className="text-3xl font-black border-l-4 border-corporate-blue pl-4 mb-8">13. Addendum</h1>
-            <ReactMarkdown>{data.addendum || '*No additional information cited.*'}</ReactMarkdown>
+            <ReactMarkdown urlTransform={(url) => url.startsWith('data:') ? url : url}>
+              {data.addendum || '*No additional information cited.*'}
+            </ReactMarkdown>
           </section>
         </div>
         <PageFooter pageNum={15} />

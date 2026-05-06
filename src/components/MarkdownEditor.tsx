@@ -81,7 +81,11 @@ export default function MarkdownEditor({ value, onChange, label, id }: MarkdownE
           />
         ) : (
           <div className="p-8 min-h-[300px] markdown-body bg-white">
-            <ReactMarkdown>{value || '*Start typing to see the live preview...*'}</ReactMarkdown>
+            <ReactMarkdown
+              urlTransform={(url) => url.startsWith('data:') ? url : url}
+            >
+              {value || '*Start typing to see the live preview...*'}
+            </ReactMarkdown>
           </div>
         )}
       </div>
