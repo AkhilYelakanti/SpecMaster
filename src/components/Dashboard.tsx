@@ -23,7 +23,9 @@ import {
   ArrowRight,
   Trash2,
   CheckCircle2,
-  MoreVertical
+  MoreVertical,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CustomTemplate, SpecData } from '../types';
@@ -38,6 +40,8 @@ interface DashboardProps {
   onDeleteTemplate: (id: string) => void;
   onContinueDraft: (data: SpecData) => void;
   onManageTemplates: () => void;
+  isDarkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
 export default function Dashboard({ 
@@ -47,7 +51,9 @@ export default function Dashboard({
   customTemplates, 
   onDeleteTemplate,
   onContinueDraft,
-  onManageTemplates
+  onManageTemplates,
+  isDarkMode,
+  onToggleDarkMode
 }: DashboardProps) {
   const [showSettings, setShowSettings] = React.useState(false);
   const [apiKey, setApiKey] = React.useState(localStorage.getItem('gemini_api_key') || '');
@@ -64,7 +70,7 @@ export default function Dashboard({
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-dark font-sans">
+    <div className="min-h-screen bg-brand-bg dark:bg-dark-bg text-brand-dark dark:text-dark-text font-sans transition-colors duration-300">
       {/* Settings Modal */}
       <AnimatePresence>
         {showSettings && (
@@ -73,7 +79,7 @@ export default function Dashboard({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden border border-white"
+              className="w-full max-w-md bg-white dark:bg-dark-surface rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.2)] overflow-hidden border border-white dark:border-dark-border"
             >
               <div className="p-10 space-y-8">
                 <div className="space-y-3">
@@ -81,24 +87,24 @@ export default function Dashboard({
                     <Settings size={24} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black tracking-tight text-brand-dark">AI Configuration</h3>
-                    <p className="text-sm text-slate-500 font-medium leading-relaxed mt-1">Connect Gemini AI to supercharge your technical drafting and reviews.</p>
+                    <h3 className="text-2xl font-black tracking-tight text-brand-dark dark:text-white">AI Configuration</h3>
+                    <p className="text-sm text-slate-500 dark:text-dark-muted font-medium leading-relaxed mt-1">Connect Gemini AI to supercharge your technical drafting and reviews.</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Gemini API Key</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-dark-muted ml-1">Gemini API Key</label>
                     <input 
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       placeholder="Paste your API key here..."
-                      className="w-full px-5 py-4 bg-brand-bg/50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-brand-cyan/10 focus:border-brand-cyan outline-none transition-all font-mono text-sm"
+                      className="w-full px-5 py-4 bg-brand-bg/50 dark:bg-dark-bg border border-slate-200 dark:border-dark-border rounded-2xl focus:ring-4 focus:ring-brand-cyan/10 focus:border-brand-cyan outline-none transition-all font-mono text-sm dark:text-white"
                     />
-                    <div className="bg-slate-50 p-4 rounded-xl text-[10px] text-slate-500 leading-relaxed border border-slate-100 italic">
+                    <div className="bg-slate-50 dark:bg-dark-bg p-4 rounded-xl text-[10px] text-slate-500 dark:text-dark-muted leading-relaxed border border-slate-100 dark:border-dark-border italic">
                       Security Note: Your key is stored ONLY in your local browser. 
-                      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-brand-teal font-bold hover:underline block mt-1">
+                      <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-brand-teal dark:text-brand-cyan font-bold hover:underline block mt-1">
                         Get a Free Key from Google AI Studio &rarr;
                       </a>
                     </div>
@@ -108,7 +114,7 @@ export default function Dashboard({
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setShowSettings(false)}
-                    className="flex-1 py-4 px-6 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black transition-all"
+                    className="flex-1 py-4 px-6 bg-slate-100 dark:bg-dark-bg hover:bg-slate-200 dark:hover:bg-dark-border text-slate-600 dark:text-dark-muted rounded-2xl font-black transition-all"
                   >
                     Cancel
                   </button>
@@ -126,15 +132,15 @@ export default function Dashboard({
       </AnimatePresence>
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 px-6 py-4">
+      <nav className="fixed top-0 w-full z-50 bg-white/80 dark:bg-dark-surface/80 backdrop-blur-md border-b border-slate-100 dark:border-dark-border px-6 py-4 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => window.location.reload()}>
             <Logo className="w-10 h-10" size={20} />
             <div>
-              <h1 className="text-xl font-black tracking-tight flex items-center gap-1.5 text-brand-dark">
+              <h1 className="text-xl font-black tracking-tight flex items-center gap-1.5 text-brand-dark dark:text-white">
                 SPEC MASTER <span className="text-brand-cyan">PRO</span>
               </h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] leading-none">Management System</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-dark-muted uppercase tracking-[0.2em] leading-none">Management System</p>
             </div>
           </div>
           <div className="flex items-center gap-6">
@@ -143,7 +149,7 @@ export default function Dashboard({
                 const guide = document.getElementById('full-documentation');
                 guide?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors"
+              className="text-sm font-bold text-slate-500 dark:text-dark-muted hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               How it works
             </button>
@@ -152,28 +158,38 @@ export default function Dashboard({
                 const templates = document.getElementById('template-library');
                 templates?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors"
+              className="text-sm font-bold text-slate-500 dark:text-dark-muted hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               Templates
             </button>
             <button 
               onClick={() => setShowSettings(true)}
-              className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2"
+              className="text-sm font-bold text-slate-500 dark:text-dark-muted hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-2"
             >
               <Settings size={16} />
               AI Setup
             </button>
-            <div className="h-4 w-px bg-slate-200"></div>
+            <div className="h-4 w-px bg-slate-200 dark:bg-dark-border"></div>
+            
+            <button 
+              onClick={onToggleDarkMode}
+              className="p-2 text-slate-500 hover:text-brand-teal hover:bg-slate-50 dark:hover:bg-dark-bg rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-dark-border transition-all"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
+            </button>
+
+            <div className="h-4 w-px bg-slate-200 dark:bg-dark-border"></div>
             <div className="group relative">
               <button 
                 onClick={onImport}
-                className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-slate-800 transition-all shadow-sm"
+                className="flex items-center gap-2 bg-slate-900 dark:bg-brand-cyan text-white px-5 py-2.5 rounded-full text-sm font-bold hover:bg-slate-800 dark:hover:bg-cyan-600 transition-all shadow-sm"
               >
                 <Upload size={16} />
                 Import JSON
               </button>
-              <div className="absolute top-full mt-2 right-0 w-48 p-2 bg-white border border-slate-200 rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[60]">
-                <p className="text-[10px] text-slate-500 leading-tight">Upload a previously saved SpecMaster JSON draft to resume editing.</p>
+              <div className="absolute top-full mt-2 right-0 w-48 p-2 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-border rounded-xl shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[60]">
+                <p className="text-[10px] text-slate-500 dark:text-dark-muted leading-tight">Upload a previously saved SpecMaster JSON draft to resume editing.</p>
               </div>
             </div>
           </div>
@@ -185,14 +201,14 @@ export default function Dashboard({
         
         {/* Hero Section */}
         <section className="relative">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
-          <div className="absolute top-0 -right-24 w-64 h-64 bg-indigo-50 rounded-full blur-[80px] opacity-40 pointer-events-none"></div>
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-50 dark:bg-brand-cyan/20 rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
+          <div className="absolute top-0 -right-24 w-64 h-64 bg-indigo-50 dark:bg-brand-teal/20 rounded-full blur-[80px] opacity-40 pointer-events-none"></div>
           
           <div className="relative z-10 space-y-8 max-w-3xl">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-600 ring-1 ring-blue-50"
+              className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 dark:bg-brand-cyan/10 border border-blue-100 dark:border-brand-cyan/20 rounded-full text-blue-600 dark:text-brand-cyan ring-1 ring-blue-50 dark:ring-brand-cyan/10"
             >
               <Sparkles size={14} className="animate-pulse" />
               <span className="text-[10px] font-black uppercase tracking-widest">Enhanced with Gemini AI</span>
@@ -202,7 +218,7 @@ export default function Dashboard({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-brand-dark"
+              className="text-6xl md:text-7xl font-black tracking-tight leading-[0.95] text-brand-dark dark:text-white"
             >
               Master Your <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-teal">Technical Specs.</span>
@@ -212,7 +228,7 @@ export default function Dashboard({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-lg text-slate-500 font-medium leading-relaxed max-w-xl"
+              className="text-lg text-slate-500 dark:text-dark-muted font-medium leading-relaxed max-w-xl"
             >
               SpecMaster Pro helps you create standardized, professional technical specifications. Use pre-defined blueprints or build your own organization-wide templates.
             </motion.p>
@@ -221,10 +237,10 @@ export default function Dashboard({
 
         {/* Standard Library */}
         <section id="template-library" className="space-y-8">
-          <div className="flex items-end justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-end justify-between border-b border-slate-100 dark:border-dark-border pb-4">
             <div className="space-y-1">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Library</h3>
-              <p className="text-2xl font-black tracking-tight">Standard Blueprints</p>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-dark-muted">Library</h3>
+              <p className="text-2xl font-black tracking-tight dark:text-white">Standard Blueprints</p>
             </div>
           </div>
 
@@ -234,13 +250,13 @@ export default function Dashboard({
                 key={tpl.id}
                 whileHover={{ y: -5, scale: 1.02 }}
                 onClick={() => onStartNew('custom', tpl)}
-                className="group relative flex flex-col p-6 bg-white border border-slate-100 rounded-[2rem] text-left hover:border-brand-cyan/50 hover:shadow-2xl hover:shadow-brand-cyan/10 transition-all duration-300"
+                className="group relative flex flex-col p-6 bg-white dark:bg-dark-surface border border-slate-100 dark:border-dark-border rounded-[2rem] text-left hover:border-brand-cyan/50 hover:shadow-2xl hover:shadow-brand-cyan/10 transition-all duration-300"
               >
-                <div className="w-14 h-14 bg-brand-bg text-brand-teal rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-cyan group-hover:text-white transition-all duration-500 shadow-sm">
+                <div className="w-14 h-14 bg-brand-bg dark:bg-dark-bg text-brand-teal dark:text-brand-cyan rounded-2xl flex items-center justify-center mb-6 group-hover:bg-brand-cyan group-hover:text-white transition-all duration-500 shadow-sm">
                   <Layout size={28} strokeWidth={1.5} />
                 </div>
-                <h4 className="text-xl font-black mb-2 text-brand-dark group-hover:text-brand-teal transition-colors">{tpl.name}</h4>
-                <p className="text-slate-500 text-sm font-medium mb-4 leading-relaxed line-clamp-2">{tpl.description}</p>
+                <h4 className="text-xl font-black mb-2 text-brand-dark dark:text-white group-hover:text-brand-teal dark:group-hover:text-brand-cyan transition-colors">{tpl.name}</h4>
+                <p className="text-slate-500 dark:text-dark-muted text-sm font-medium mb-4 leading-relaxed line-clamp-2">{tpl.description}</p>
                 <div className="mt-auto flex items-center gap-2 text-brand-cyan font-bold text-[10px] uppercase tracking-widest group-hover:translate-x-2 transition-transform">
                   Generate Specification <ArrowRight size={14} />
                 </div>
@@ -253,37 +269,37 @@ export default function Dashboard({
         <section id="full-documentation" className="space-y-16 py-20 px-6">
           <div className="max-w-4xl mx-auto space-y-8">
             <div className="space-y-4 text-center">
-              <h2 className="text-4xl font-black tracking-tight">Platform Guide</h2>
-              <p className="text-slate-500 text-lg">Everything you need to know about SpecMaster Pro architectural standards.</p>
+              <h2 className="text-4xl font-black tracking-tight dark:text-white transition-colors">Platform Guide</h2>
+              <p className="text-slate-500 dark:text-dark-muted text-lg transition-colors">Everything you need to know about SpecMaster Pro architectural standards.</p>
             </div>
 
             <div className="space-y-12">
               <div className="space-y-4">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <FileText className="text-blue-600" size={24} />
+                <h3 className="text-xl font-bold flex items-center gap-2 dark:text-white transition-colors">
+                  <FileText className="text-blue-600 dark:text-brand-cyan" size={24} />
                   What is a Technical Specification?
                 </h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 dark:text-dark-muted leading-relaxed transition-colors">
                   A technical specification (tech spec) describes how you’re going to solve a problem. It’s a blueprint for a solution, including the technical design, the business context, and the expected outcomes.
                 </p>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <Sparkles className="text-indigo-600" size={24} />
+                <h3 className="text-xl font-bold flex items-center gap-2 dark:text-white transition-colors">
+                  <Sparkles className="text-indigo-600 dark:text-brand-teal" size={24} />
                   AI-Powered Generation
                 </h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 dark:text-dark-muted leading-relaxed transition-colors">
                   Our integration with Gemini allows you to generate content based on your project title and business need. If you find a section difficult to write, use "AI Suggest" to get a high-quality draft that follows technical best practices.
                 </p>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <Upload className="text-emerald-600" size={24} />
+                <h3 className="text-xl font-bold flex items-center gap-2 dark:text-white transition-colors">
+                  <Upload className="text-emerald-600 dark:text-brand-cyan" size={24} />
                   Managing JSON Drafts
                 </h3>
-                <p className="text-slate-600 leading-relaxed">
+                <p className="text-slate-600 dark:text-dark-muted leading-relaxed transition-colors">
                   The "Import JSON" feature allows you to resume work on a document you previously saved. Simply download your draft as JSON, and later upload it to the dashboard to continue editing exactly where you left off.
                 </p>
               </div>
@@ -293,10 +309,10 @@ export default function Dashboard({
 
         {/* Action Grid (Standard Options) */}
         <section className="space-y-8">
-          <div className="flex items-end justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-end justify-between border-b border-slate-100 dark:border-dark-border pb-4">
             <div className="space-y-1">
-              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Quick Start</h3>
-              <p className="text-2xl font-black tracking-tight">Create Document</p>
+              <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-dark-muted">Quick Start</h3>
+              <p className="text-2xl font-black tracking-tight dark:text-white">Create Document</p>
             </div>
           </div>
 
@@ -305,14 +321,14 @@ export default function Dashboard({
             <motion.button 
               whileHover={{ y: -5 }}
               onClick={() => onStartNew('blank')}
-              className="group relative flex flex-col p-8 bg-white border border-slate-200 rounded-[2.5rem] text-left hover:border-slate-800 hover:shadow-2xl transition-all duration-500"
+              className="group relative flex flex-col p-8 bg-white dark:bg-dark-surface border border-slate-200 dark:border-dark-border rounded-[2.5rem] text-left hover:border-slate-800 dark:hover:border-brand-cyan hover:shadow-2xl transition-all duration-500"
             >
-                <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300">
+                <div className="w-14 h-14 bg-slate-100 dark:bg-dark-bg text-slate-400 dark:text-dark-muted rounded-2xl flex items-center justify-center mb-10 group-hover:bg-slate-900 dark:group-hover:bg-brand-cyan group-hover:text-white transition-all duration-300">
                   <Plus size={28} />
                 </div>
-                <h4 className="text-2xl font-black mb-3 text-brand-dark">Blank Spec</h4>
-                <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">Start with a clean slate. Build your document structure from scratch.</p>
-                <div className="mt-auto flex items-center gap-2 text-slate-400 font-black text-xs uppercase tracking-widest group-hover:translate-x-1 group-hover:text-slate-900 transition-transform">
+                <h4 className="text-2xl font-black mb-3 text-brand-dark dark:text-white">Blank Spec</h4>
+                <p className="text-slate-500 dark:text-dark-muted text-sm font-medium mb-8 leading-relaxed">Start with a clean slate. Build your document structure from scratch.</p>
+                <div className="mt-auto flex items-center gap-2 text-slate-400 dark:text-dark-muted font-black text-xs uppercase tracking-widest group-hover:translate-x-1 group-hover:text-slate-900 dark:group-hover:text-white transition-transform">
                   Design Template <ArrowRight size={16} />
                 </div>
             </motion.button>
@@ -321,13 +337,13 @@ export default function Dashboard({
             <motion.button 
               whileHover={{ y: -5 }}
               onClick={() => onStartNew('new')}
-              className="group relative flex flex-col p-8 bg-blue-50/30 border border-blue-100 rounded-[2.5rem] text-left hover:border-blue-500 hover:shadow-2xl transition-all duration-500"
+              className="group relative flex flex-col p-8 bg-blue-50/30 dark:bg-brand-cyan/5 border border-blue-100 dark:border-brand-cyan/20 rounded-[2.5rem] text-left hover:border-blue-500 dark:hover:border-brand-cyan hover:shadow-2xl transition-all duration-500"
             >
                 <div className="w-14 h-14 bg-brand-cyan/10 text-brand-cyan rounded-2xl flex items-center justify-center mb-10 group-hover:bg-brand-cyan group-hover:text-white transition-all duration-300">
                   <FileText size={28} />
                 </div>
-                <h4 className="text-2xl font-black mb-3 text-brand-dark">Standard Spec</h4>
-                <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">System architecture, data models, and complex service logic frameworks.</p>
+                <h4 className="text-2xl font-black mb-3 text-brand-dark dark:text-white">Standard Spec</h4>
+                <p className="text-slate-500 dark:text-dark-muted text-sm font-medium mb-8 leading-relaxed">System architecture, data models, and complex service logic frameworks.</p>
                 <div className="mt-auto flex items-center gap-2 text-brand-cyan font-black text-xs uppercase tracking-widest group-hover:translate-x-1 transition-transform">
                   Start Building <ArrowRight size={16} />
                 </div>
@@ -340,14 +356,14 @@ export default function Dashboard({
                 const docTemplate = STANDARD_TEMPLATES.find(t => t.id === 'tpl-project-doc');
                 onStartNew('custom', docTemplate);
               }}
-              className="group relative flex flex-col p-8 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] text-left hover:border-emerald-500 hover:shadow-2xl transition-all duration-500"
+              className="group relative flex flex-col p-8 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/20 rounded-[2.5rem] text-left hover:border-emerald-500 dark:hover:border-emerald-400 hover:shadow-2xl transition-all duration-500"
             >
-              <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+              <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mb-10 group-hover:bg-emerald-600 dark:group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
                 <BookOpen size={28} />
               </div>
-              <h4 className="text-2xl font-black mb-3">Project Overview</h4>
-              <p className="text-slate-500 text-sm font-medium mb-8 leading-relaxed">High-level project goals, stakeholders, and strategic milestones.</p>
-              <div className="mt-auto flex items-center gap-2 text-emerald-600 font-black text-xs uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+              <h4 className="text-2xl font-black mb-3 text-brand-dark dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Project Overview</h4>
+              <p className="text-slate-500 dark:text-dark-muted text-sm font-medium mb-8 leading-relaxed">High-level project goals, stakeholders, and strategic milestones.</p>
+              <div className="mt-auto flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-xs uppercase tracking-widest group-hover:translate-x-1 transition-transform">
                 Create Doc <ArrowRight size={16} />
               </div>
             </motion.button>
@@ -356,14 +372,14 @@ export default function Dashboard({
             <motion.button 
               whileHover={{ y: -5 }}
               onClick={() => onStartNew('enhancement')}
-              className="group relative flex flex-col p-8 bg-slate-900 border border-slate-800 rounded-[2.5rem] text-left hover:border-blue-500 hover:shadow-2xl transition-all duration-500 text-white"
+              className="group relative flex flex-col p-8 bg-slate-900 dark:bg-dark-surface border border-slate-800 dark:border-dark-border rounded-[2.5rem] text-left hover:border-blue-500 dark:hover:border-brand-cyan hover:shadow-2xl transition-all duration-500 text-white"
             >
-              <div className="w-14 h-14 bg-white/10 text-white rounded-2xl flex items-center justify-center mb-10 group-hover:bg-blue-600 transition-all duration-300">
+              <div className="w-14 h-14 bg-white/10 dark:bg-dark-bg text-white dark:text-dark-muted rounded-2xl flex items-center justify-center mb-10 group-hover:bg-blue-600 dark:group-hover:bg-brand-cyan transition-all duration-300">
                 <Layout size={28} />
               </div>
               <h4 className="text-2xl font-black mb-3 text-white">Fix / Enhancement</h4>
-              <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">Document specific changes to existing systems or bug fix architectures.</p>
-              <div className="mt-auto flex items-center gap-2 text-blue-400 font-black text-xs uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+              <p className="text-slate-400 dark:text-dark-muted text-sm font-medium mb-8 leading-relaxed">Document specific changes to existing systems or bug fix architectures.</p>
+              <div className="mt-auto flex items-center gap-2 text-blue-400 dark:text-brand-cyan font-black text-xs uppercase tracking-widest group-hover:translate-x-1 transition-transform">
                 Start Spec <ArrowRight size={16} />
               </div>
             </motion.button>
@@ -434,12 +450,12 @@ export default function Dashboard({
           
           {/* Recent Drafts */}
           <div className="lg:col-span-2 space-y-8">
-            <div className="flex items-end justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-end justify-between border-b border-slate-100 dark:border-dark-border pb-4 transition-colors">
               <div className="space-y-1">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Resume</h3>
-                <p className="text-2xl font-black tracking-tight">Recent Sessions</p>
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-dark-muted">Resume</h3>
+                <p className="text-2xl font-black tracking-tight dark:text-white">Recent Sessions</p>
               </div>
-              <button className="text-sm font-bold text-blue-600 hover:underline">View All</button>
+              <button className="text-sm font-bold text-blue-600 dark:text-brand-cyan hover:underline">View All</button>
             </div>
 
             <div className="space-y-3">
@@ -451,35 +467,35 @@ export default function Dashboard({
                     transition={{ delay: idx * 0.05 }}
                     key={draft.id}
                     onClick={() => onContinueDraft(draft.data)}
-                    className="w-full flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl hover:border-brand-cyan/30 hover:shadow-xl hover:shadow-brand-cyan/5 transition-all text-left group"
+                    className="w-full flex items-center justify-between p-5 bg-white dark:bg-dark-surface border border-slate-100 dark:border-dark-border rounded-2xl hover:border-brand-cyan/30 hover:shadow-xl hover:shadow-brand-cyan/5 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-brand-bg text-brand-teal rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-12 h-12 bg-brand-bg dark:bg-dark-bg text-brand-teal dark:text-brand-cyan rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Clock size={20} />
                       </div>
                       <div>
-                        <h5 className="font-black text-brand-dark group-hover:text-brand-cyan transition-colors">{draft.title || 'Untitled Specification'}</h5>
+                        <h5 className="font-black text-brand-dark dark:text-white group-hover:text-brand-cyan transition-colors">{draft.title || 'Untitled Specification'}</h5>
                         <div className="flex items-center gap-3 mt-1">
-                          <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                          <span className="text-xs font-bold text-slate-400 dark:text-dark-muted flex items-center gap-1">
                             {draft.date}
                           </span>
-                          <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-brand-teal">
+                          <span className="w-1 h-1 rounded-full bg-slate-200 dark:bg-dark-border"></span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-brand-teal dark:text-brand-cyan">
                             {draft.data.specType}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="text-slate-300 group-hover:text-brand-cyan group-hover:translate-x-1 transition-all" size={20} />
+                    <ChevronRight className="text-slate-300 dark:text-dark-muted group-hover:text-brand-cyan group-hover:translate-x-1 transition-all" size={20} />
                   </motion.button>
                 ))
               ) : (
-                <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                  <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="p-12 text-center border-2 border-dashed border-slate-100 dark:border-dark-border rounded-3xl">
+                  <div className="w-16 h-16 bg-slate-50 dark:bg-dark-bg text-slate-300 dark:text-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <BookOpen size={24} />
                   </div>
-                  <p className="text-slate-400 font-bold">No active drafts found</p>
-                  <p className="text-xs text-slate-300 mt-1">Start a new project to see them here</p>
+                  <p className="text-slate-400 dark:text-dark-muted font-bold">No active drafts found</p>
+                  <p className="text-xs text-slate-300 dark:text-dark-muted/50 mt-1">Start a new project to see them here</p>
                 </div>
               )}
             </div>
@@ -487,10 +503,10 @@ export default function Dashboard({
 
           {/* Templates Sidebar */}
           <div className="space-y-8">
-            <div className="flex items-end justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-end justify-between border-b border-slate-100 dark:border-dark-border pb-4">
               <div className="space-y-1">
-                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Reusable</h3>
-                <p className="text-2xl font-black tracking-tight">Your Blueprints</p>
+                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 dark:text-dark-muted">Reusable</h3>
+                <p className="text-2xl font-black tracking-tight dark:text-white">Your Blueprints</p>
               </div>
               <button 
                 onClick={onManageTemplates}
@@ -505,22 +521,22 @@ export default function Dashboard({
               {customTemplates.map((template) => (
                 <div 
                   key={template.id}
-                  className="group p-5 bg-white border border-slate-100 rounded-2xl hover:border-brand-cyan/20 hover:shadow-lg transition-all cursor-pointer relative"
+                  className="group p-5 bg-white dark:bg-dark-surface border border-slate-100 dark:border-dark-border rounded-2xl hover:border-brand-cyan/20 hover:shadow-lg transition-all cursor-pointer relative"
                   onClick={() => onStartNew('custom', template)}
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 bg-brand-bg text-brand-teal rounded-xl flex items-center justify-center group-hover:bg-brand-cyan group-hover:text-white transition-all">
+                    <div className="w-10 h-10 bg-brand-bg dark:bg-dark-bg text-brand-teal dark:text-brand-cyan rounded-xl flex items-center justify-center group-hover:bg-brand-cyan group-hover:text-white transition-all">
                       <Layout size={18} />
                     </div>
                     <button 
                       onClick={(e) => { e.stopPropagation(); onDeleteTemplate(template.id); }}
-                      className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      className="p-2 text-slate-300 dark:text-dark-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-all"
                     >
                       <Trash2 size={16} />
                     </button>
                   </div>
-                  <h6 className="font-black text-brand-dark line-clamp-1 group-hover:text-brand-cyan transition-colors">{template.name}</h6>
-                  <p className="text-[11px] text-slate-500 font-medium line-clamp-2 mt-2 leading-relaxed">
+                  <h6 className="font-black text-brand-dark dark:text-white line-clamp-1 group-hover:text-brand-cyan transition-colors">{template.name}</h6>
+                  <p className="text-[11px] text-slate-500 dark:text-dark-muted font-medium line-clamp-2 mt-2 leading-relaxed">
                     {template.description}
                   </p>
                 </div>
@@ -528,7 +544,7 @@ export default function Dashboard({
 
               <button 
                 onClick={onImport}
-                className="w-full p-4 border-2 border-dashed border-slate-100 rounded-2xl text-slate-400 font-bold text-sm hover:border-slate-200 hover:text-slate-500 transition-all flex items-center justify-center gap-2"
+                className="w-full p-4 border-2 border-dashed border-slate-100 dark:border-dark-border rounded-2xl text-slate-400 dark:text-dark-muted font-bold text-sm hover:border-slate-200 dark:hover:border-dark-muted hover:text-slate-500 dark:hover:text-white transition-all flex items-center justify-center gap-2"
               >
                 <Plus size={16} />
                 Add Blueprint
@@ -539,18 +555,18 @@ export default function Dashboard({
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-100 py-12 px-6">
+      <footer className="border-t border-slate-100 dark:border-dark-border py-12 px-6 transition-colors">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex items-center gap-2 opacity-40 grayscale">
+          <div className="flex items-center gap-2 opacity-40 grayscale dark:invert">
             <FileText size={18} />
-            <span className="font-black tracking-tight">SpecMaster Pro</span>
+            <span className="font-black tracking-tight text-brand-dark dark:text-white">SpecMaster Pro</span>
           </div>
-          <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
-            <button className="hover:text-slate-900 transition-colors">Privacy Policy</button>
-            <button className="hover:text-slate-900 transition-colors">Architecture Best Practices</button>
-            <button className="hover:text-slate-900 transition-colors">Contact Support</button>
+          <div className="flex items-center gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-dark-muted">
+            <button className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</button>
+            <button className="hover:text-slate-900 dark:hover:text-white transition-colors">Architecture Best Practices</button>
+            <button className="hover:text-slate-900 dark:hover:text-white transition-colors">Contact Support</button>
           </div>
-          <p className="text-[10px] font-bold text-slate-400">© 2026 SpecMaster Pro. All rights reserved.</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-dark-muted">© 2026 SpecMaster Pro. All rights reserved.</p>
         </div>
       </footer>
     </div>

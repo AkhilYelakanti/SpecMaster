@@ -85,10 +85,32 @@ export interface CustomTemplate {
   version?: string;
 }
 
+export type SubSectionType = 'markdown' | 'table' | 'script';
+
+export interface TableRow {
+  id: string;
+  [key: string]: string;
+}
+
+export interface TableMetaData {
+  columns: string[];
+  rows: TableRow[];
+}
+
+export interface SubSection {
+  id: string;
+  title: string;
+  type: SubSectionType;
+  content: string;
+  tableData?: TableMetaData;
+  order: number;
+}
+
 export interface CustomSection {
   id: string;
   title: string;
   content: string;
+  subSections: SubSection[];
   order: number;
 }
 
